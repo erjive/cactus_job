@@ -1,0 +1,60 @@
+Como configurar los archivos de Cactus para utilizar el sistema de torque (de colas) del cluster xook.
+Erik Jiménez 8/01/2020
+
+
+Nota: Todas las instrucciones están referidas al directorio de Cactus
+
+0.- Verifica que puedes compilar Cactus correctamente.
+1.- Si ya fue compilado Cactus el archivo xook.nucleares.unam.mx.ini debe aparecer en simfactory/mdb/machines,
+    si no, crea una configuración.
+2.- Debemos configurar del archivo que ejecuta Cactus. Crea (o copia) el archivo xook.run en simfactory/mdb/runscripts.
+    En este archivo se deberán poner las instrucciones para que se carguen las librerias, en el ejemplo cargo las librerias
+
+    gnu/5.4
+    openmpi/gnu
+
+    pero si se usan los compiladores de Intel u otras librerias deben especificarse.
+
+3.- El archivo xook.nucleares.unam.mx.ini puede copiarse del ejemplo pero se deben de modificar algunas líneas para que
+    se carguen los scripts de forma correcta. En este punto es una buena idea configurar el directorio donde deseemos
+    guardar los resultados de las simulaciones, para ello especificamos la dirección en basedir.
+    Ejemplo, guardar las simulaciones en cactus_simulations:
+
+    basedir         = /storage/vlasov/erik/cactus_simulations
+
+    Debemos modificar también las variables submitscript y runscript, especificando las direcciones de los archivos,
+    para optionlist debemos verificar que tiene asignado correctamente el archivo tochtli.cfg,
+    para submitscript el archivo pbs-normal.sub y para runscript, xook.run.
+
+    Ejemplo:
+
+    optionlist      = /storage/vlasov/erik/Cactus/repos/simfactory2/mdb/optionlists/tochtli.cfg
+    submitscript    = /storage/vlasov/erik/Cactus/repos/simfactory2/mdb/submitscripts/pbs-normal.sub
+    runscript       = /storage/vlasov/erik/Cactus/repos/simfactory2/mdb/runscripts/xook.run
+
+    *En el ejemplo, Cactus está alojado en /storage/vlasov/erik y esto cambiará dependiendo del grupo en el que esté
+    alojada la cuenta en el cluster. La dirección de los archivos .cfg, .sub y .run se debe de especificar de forma absoluta.
+    Aquí también se puede configurar la cola que se usará por defecto, en el archivo se configuró la cola mpi.
+
+4.- Recompila Cactus pero agrega la opción  --reconfig para validar los cambios, Ejemplo:
+
+    ./simfactory/bin/sim build --mdbkey make 'make -j12' --thornlist=manifest/einsteintoolkit.th --reconfig
+
+5.- Para mandar a cola es necesario tener las librerias cargadas de gnu y openmpi, si ya se hizo con anterioridad
+    no es necesario cargalas de nuevo, pero si se inicia con una sesión nueva, es importante cargarlas, de lo contrario lanzará un error.
+
+    Si todo salió bien, podemos mandar a queue algún trabajo utilizando simfactory. En Cactus:
+
+    ./simfactory/bin/sim create-submit Nombre_simulación --parfile=dirección_del_archivo_de_parámetros --walltime=tiempo_solicitado
+
+    Podemos verificar que se mandó a cola escribiendo en la terminal qstat -u NombreUsuario
+
+    El directorio donde aparecerá la simulación será el especificado en basedir.
+
+    Comentarios:
+
+    la cola mpi puede proporcionar un máximo de 240 horas de cómputo usando 16 hilos en un nodo, por ejemplo, si necesitamos 120 horas
+    --walltime=120:00:00.
+
+    Existen más parámetros para pedir los recursos al cluster, léase la documentación de simfactory.
+
